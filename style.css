@@ -187,6 +187,7 @@ h1 {
   transition: all 0.14s;
   text-decoration: none;
   white-space: nowrap;
+  -webkit-user-select: none;
   user-select: none;
 }
 .btn-export {
@@ -311,6 +312,7 @@ td:last-child { border-right: none; }
 /* Display-only badge (locked) */
 .status-badge {
   cursor: default;
+  -webkit-user-select: none;
   user-select: none;
   border: 1.5px solid transparent;
 }
@@ -398,11 +400,12 @@ td:last-child { border-right: none; }
   position: fixed;
   inset: 0;
   background: rgba(20,12,5,0.55);
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   z-index: 100;
   padding: 20px;
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 .modal-box {
@@ -431,6 +434,10 @@ td:last-child { border-right: none; }
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-bottom: 6px;
+}
+
+.modal-label-spaced {
+  margin-top: 16px;
 }
 
 /* YES / NO toggle group inside modal */

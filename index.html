@@ -51,7 +51,7 @@
     </button>
     <label class="btn-excel btn-import" title="Import .xlsx — columns: Name, Status (YES/NO)">
       ⬆ Import Excel
-      <input type="file" id="import-file" accept=".xlsx,.xls" onchange="importExcel(event)" style="display:none;" />
+      <input type="file" id="import-file" accept=".xlsx,.xls" onchange="importExcel(event)" hidden />
     </label>
     <span class="excel-hint">Export saves your list · Import adds rows from .xlsx</span>
   </div>
@@ -86,16 +86,16 @@
   </footer>
 
   <!-- ===== EDIT MODAL ===== -->
-  <div id="edit-modal" class="modal-overlay" style="display:none;">
+  <div id="edit-modal" class="modal-overlay">
     <div class="modal-box">
       <h2>✏ Edit Record</h2>
 
       <!-- Name field -->
-      <label class="modal-label">Name</label>
+      <label class="modal-label" for="edit-input">Name</label>
       <input type="text" id="edit-input" maxlength="60" />
 
       <!-- Status toggle inside modal -->
-      <label class="modal-label" style="margin-top:16px;">Status</label>
+      <label class="modal-label modal-label-spaced">Status</label>
       <div class="status-toggle-group">
         <button id="toggle-yes" class="toggle-btn toggle-yes" onclick="setModalStatus('YES')">✓ YES (Paid)</button>
         <button id="toggle-no"  class="toggle-btn toggle-no"  onclick="setModalStatus('NO')">✗ NO (Unpaid)</button>
