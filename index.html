@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kismot Borobari Meat Distribution List</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- SheetJS: client-side Excel read/write (no backend needed) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- ===== APP HEADER ===== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <span class="header-icon">🥩</span>
+        <div>
+          <h1>Kismot Borobari Meat Distribution List</h1>
+          <p class="subtitle">Offline Record Sheet — Data saved in browser</p>
+        </div>
+      </div>
+      <!-- Live count badges -->
+      <div class="stats">
+        <span class="badge badge-total">Total: <strong id="stat-total">0</strong></span>
+        <span class="badge badge-yes">Paid: <strong id="stat-yes">0</strong></span>
+        <span class="badge badge-no">Unpaid: <strong id="stat-no">0</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== ADD ROW FORM ===== -->
+  <section class="add-section">
+    <div class="add-form">
+      <input
+        type="text"
+        id="name-input"
+        placeholder="Enter recipient name..."
+        autocomplete="off"
+        maxlength="60"
+      />
+      <button id="add-btn" onclick="addRow()">＋ Add</button>
+    </div>
+    <p class="hint">Press <kbd>Enter</kbd> to add quickly</p>
+  </section>
+
+  <!-- ===== EXCEL IMPORT / EXPORT TOOLBAR ===== -->
+  <div class="excel-toolbar">
+    <button class="btn-excel btn-export" onclick="exportExcel()">
+      ⬇ Export Excel
+    </button>
+    <label class="btn-excel btn-import" title="Import .xlsx — columns: Name, Status (YES/NO)">
+      ⬆ Import Excel
+      <input type="file" id="import-file" accept=".xlsx,.xls" onchange="importExcel(event)" style="display:none;" />
+    </label>
+    <span class="excel-hint">Export saves your list · Import adds rows from .xlsx</span>
+  </div>
+
+  <!-- ===== DATA TABLE ===== -->
+  <main class="table-wrapper">
+    <table id="distribution-table">
+      <thead>
+        <tr>
+          <th class="col-serial">#</th>
+          <th class="col-name">Name</th>
+          <th class="col-status">Status</th>
+          <th class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- Rows injected by JavaScript -->
+      </tbody>
+    </table>
+
+    <!-- Empty state shown when no data -->
+    <div id="empty-state" class="empty-state">
+      <span class="empty-icon">📋</span>
+      <p>No records yet. Add a name above to get started.</p>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="app-footer">
+    <button class="btn-clear" onclick="clearAll()">🗑 Clear All Data</button>
+    <span class="footer-note">All data stored locally in your browser</span>
+  </footer>
+
+  <!-- ===== EDIT MODAL ===== -->
+  <div id="edit-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h2>Edit Name</h2>
+      <input type="text" id="edit-input" maxlength="60" />
+      <div class="modal-actions">
+        <button class="btn-save" onclick="saveEdit()">Save</button>
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
