@@ -118,7 +118,9 @@ function openEdit(id) {
   document.getElementById('toggle-yes').classList.toggle('active', row.status === 'YES');
   document.getElementById('toggle-no').classList.toggle('active',  row.status === 'NO');
 
-  document.getElementById('edit-modal').style.display = 'flex';
+  const modal = document.getElementById('edit-modal');
+  modal.hidden = false;
+  modal.style.display = 'flex';
   setTimeout(() => document.getElementById('edit-input').focus(), 50);
 }
 
@@ -140,7 +142,9 @@ function saveEdit() {
 
 // ── CLOSE MODAL ───────────────────────────────
 function closeModal() {
-  document.getElementById('edit-modal').style.display = 'none';
+  const modal = document.getElementById('edit-modal');
+  modal.style.display = 'none';
+  modal.hidden = true;
   editingId = null;
 }
 
