@@ -280,41 +280,42 @@ td:last-child { border-right: none; }
 .cell-name { font-weight: 500; }
 
 /* =============================================
-   STATUS BUTTON
+   STATUS — two variants:
+   .btn-status  → clickable (first-time, unlocked rows)
+   .status-badge → display only (locked rows)
    ============================================= */
-.btn-status {
+.btn-status,
+.status-badge {
   display: inline-block;
   padding: 5px 14px;
-  border: none;
-  border-radius: 30px;         /* pill shape */
+  border-radius: 30px;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.06em;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
   min-width: 68px;
   text-align: center;
 }
-.btn-status.yes {
-  background: var(--green-bg);
-  color: var(--green);
-  border: 1.5px solid var(--green);
+/* Clickable button (unlocked) */
+.btn-status {
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
 }
-.btn-status.yes:hover {
-  background: var(--green);
-  color: #fff;
-}
-.btn-status.no {
-  background: var(--red-bg);
-  color: var(--red);
-  border: 1.5px solid var(--red);
-}
-.btn-status.no:hover {
-  background: var(--red);
-  color: #fff;
-}
+.btn-status.yes { background: var(--green-bg); color: var(--green); border: 1.5px solid var(--green); }
+.btn-status.yes:hover { background: var(--green); color: #fff; }
+.btn-status.no  { background: var(--red-bg);   color: var(--red);   border: 1.5px solid var(--red);   }
+.btn-status.no:hover  { background: var(--red);   color: #fff; }
 .btn-status:active { transform: scale(0.95); }
+
+/* Display-only badge (locked) */
+.status-badge {
+  cursor: default;
+  user-select: none;
+  border: 1.5px solid transparent;
+}
+.status-badge.yes { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+.status-badge.no  { background: var(--red-bg);   color: var(--red);   border-color: var(--red);   }
 
 /* =============================================
    ACTION BUTTONS (Edit / Delete)
@@ -420,6 +421,52 @@ td:last-child { border-right: none; }
   margin-bottom: 14px;
   letter-spacing: 0.04em;
 }
+
+/* Label above each field */
+.modal-label {
+  display: block;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+
+/* YES / NO toggle group inside modal */
+.status-toggle-group {
+  display: flex;
+  gap: 8px;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 9px 10px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid transparent;
+  opacity: 0.45;              /* dim when NOT selected */
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+}
+.toggle-btn.active { opacity: 1; }   /* full colour when selected */
+
+.toggle-yes {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: var(--green);
+}
+.toggle-yes.active  { background: var(--green); color: #fff; }
+.toggle-yes:hover   { opacity: 0.85; }
+
+.toggle-no {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red);
+}
+.toggle-no.active  { background: var(--red); color: #fff; }
+.toggle-no:hover   { opacity: 0.85; }
 #edit-input {
   width: 100%;
   padding: 10px 12px;

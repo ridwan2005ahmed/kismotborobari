@@ -88,8 +88,19 @@
   <!-- ===== EDIT MODAL ===== -->
   <div id="edit-modal" class="modal-overlay" style="display:none;">
     <div class="modal-box">
-      <h2>Edit Name</h2>
+      <h2>✏ Edit Record</h2>
+
+      <!-- Name field -->
+      <label class="modal-label">Name</label>
       <input type="text" id="edit-input" maxlength="60" />
+
+      <!-- Status toggle inside modal -->
+      <label class="modal-label" style="margin-top:16px;">Status</label>
+      <div class="status-toggle-group">
+        <button id="toggle-yes" class="toggle-btn toggle-yes" onclick="setModalStatus('YES')">✓ YES (Paid)</button>
+        <button id="toggle-no"  class="toggle-btn toggle-no"  onclick="setModalStatus('NO')">✗ NO (Unpaid)</button>
+      </div>
+
       <div class="modal-actions">
         <button class="btn-save" onclick="saveEdit()">Save</button>
         <button class="btn-cancel" onclick="closeModal()">Cancel</button>

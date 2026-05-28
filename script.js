@@ -7,28 +7,26 @@
 const STORAGE_KEY = 'meatDistList_v1';
 
 // ── STATE ─────────────────────────────────────
-// `rows` is an array of objects: { id, name, status }
-// `editingId` tracks which row is currently being edited
-let rows      = [];
-let editingId = null;
+let rows       = [];
+let editingId  = null;
+let modalStatus = 'NO';   // tracks YES/NO selection inside the Edit modal
 
 // ── INIT ──────────────────────────────────────
-// Load saved data from localStorage when page loads
 window.addEventListener('DOMContentLoaded', function () {
   loadFromStorage();
   renderTable();
 
-  // Allow pressing Enter key in the name input to add a row
+  // Enter key in name input → add row
   document.getElementById('name-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') addRow();
   });
 
-  // Allow pressing Enter in edit modal to save
+  // Enter key in edit modal → save
   document.getElementById('edit-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') saveEdit();
   });
 
-  // Close modal when clicking the dark overlay background
+  // Click dark overlay → close modal
   document.getElementById('edit-modal').addEventListener('click', function (e) {
     if (e.target === this) closeModal();
   });
@@ -39,9 +37,9 @@ function loadFromStorage() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      rows = JSON.parse(saved);   // parse the saved JSON string back into array
+      rows = JSON.parse(saved);
     } catch (err) {
-      rows = [];                  // if data is corrupted, start fresh
+      rows = [];
     }
   }
 }
@@ -52,7 +50,6 @@ function saveToStorage() {
 }
 
 // ── GENERATE UNIQUE ID ────────────────────────
-// Simple timestamp-based ID — unique enough for local use
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 }
@@ -62,7 +59,6 @@ function addRow() {
   const input = document.getElementById('name-input');
   const name  = input.value.trim();
 
-  // Validate: don't add empty names
   if (!name) {
     input.focus();
     input.style.borderColor = '#b81c1c';
@@ -70,27 +66,30 @@ function addRow() {
     return;
   }
 
-  // Build the new row object
-  const newRow = {
-    id:     generateId(),
-    name:   name,
-    status: 'NO'        // default status is unpaid / NO
-  };
+  rows.push({ id: generateId(), name: name, status: 'NO', locked: false });
+  saveToStorage();
+  renderTable();
 
-  rows.push(newRow);     // add to array
-  saveToStorage();       // persist to localStorage
-  renderTable();         // refresh the table
-
-  // Clear the input and return focus
   input.value = '';
   input.focus();
 }
 
-// ── TOGGLE STATUS (YES ↔ NO) ──────────────────
-function toggleStatus(id) {
+// ── SET STATUS INSIDE MODAL ───────────────────
+// Called when YES or NO button is pressed inside Edit modal
+function setModalStatus(val) {
+  modalStatus = val;
+  document.getElementById('toggle-yes').classList.toggle('active', val === 'YES');
+  document.getElementById('toggle-no').classList.toggle('active',  val === 'NO');
+}
+
+// ── FIRST-TIME STATUS TOGGLE (table button) ───
+// Only works if the row has never been confirmed (locked: false)
+// After first press → locked: true → button becomes a plain badge
+function firstTimeToggle(id) {
   const row = rows.find(r => r.id === id);
-  if (!row) return;
-  row.status = (row.status === 'YES') ? 'NO' : 'YES';   // flip the value
+  if (!row || row.locked) return;   // already locked → ignore click
+  row.status = (row.status === 'YES') ? 'NO' : 'YES';
+  row.locked = true;                // lock after first change
   saveToStorage();
   renderTable();
 }
@@ -98,12 +97,9 @@ function toggleStatus(id) {
 // ── DELETE A ROW ──────────────────────────────
 function deleteRow(id) {
   const row   = rows.find(r => r.id === id);
-  const label = row ? `"${row.name}"` : 'this record';
-
-  // Simple confirmation before deleting
-  if (!confirm(`Delete ${label}?`)) return;
-
-  rows = rows.filter(r => r.id !== id);   // remove matching row
+  const label = row ? '"' + row.name + '"' : 'this record';
+  if (!confirm('Delete ' + label + '?')) return;
+  rows = rows.filter(r => r.id !== id);
   saveToStorage();
   renderTable();
 }
@@ -113,24 +109,28 @@ function openEdit(id) {
   const row = rows.find(r => r.id === id);
   if (!row) return;
 
-  editingId = id;   // remember which row we're editing
+  editingId   = id;
+  modalStatus = row.status;   // pre-fill current status
 
-  const editInput = document.getElementById('edit-input');
-  editInput.value = row.name;
+  document.getElementById('edit-input').value = row.name;
 
-  // Show the modal
+  // Highlight the correct YES/NO button
+  document.getElementById('toggle-yes').classList.toggle('active', row.status === 'YES');
+  document.getElementById('toggle-no').classList.toggle('active',  row.status === 'NO');
+
   document.getElementById('edit-modal').style.display = 'flex';
-  setTimeout(() => editInput.focus(), 50);   // small delay so focus works reliably
+  setTimeout(() => document.getElementById('edit-input').focus(), 50);
 }
 
 // ── SAVE EDIT ─────────────────────────────────
 function saveEdit() {
   const newName = document.getElementById('edit-input').value.trim();
-  if (!newName) return;   // ignore empty saves
+  if (!newName) return;
 
   const row = rows.find(r => r.id === editingId);
   if (row) {
-    row.name = newName;
+    row.name   = newName;
+    row.status = modalStatus;   // save the status chosen inside the modal
     saveToStorage();
     renderTable();
   }
@@ -145,99 +145,66 @@ function closeModal() {
 }
 
 // ── EXPORT TO EXCEL (.xlsx) ───────────────────
-// Converts the `rows` array into an Excel file and triggers a download
 function exportExcel() {
   if (rows.length === 0) {
     alert('Nothing to export. Add some rows first!');
     return;
   }
 
-  // Build the data array: header row + one row per entry
-  const sheetData = [
-    ['Serial No', 'Name', 'Status']    // header row
-  ];
+  const sheetData = [['Serial No', 'Name', 'Status']];
   rows.forEach(function (row, index) {
     sheetData.push([index + 1, row.name, row.status]);
   });
 
-  // Create a worksheet and workbook using SheetJS
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);   // aoa = array of arrays
-
-  // Style column widths (SheetJS supports !cols)
-  ws['!cols'] = [
-    { wch: 10 },   // Serial No
-    { wch: 30 },   // Name
-    { wch: 10 }    // Status
-  ];
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  ws['!cols'] = [{ wch: 10 }, { wch: 30 }, { wch: 10 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Distribution List');
 
-  // Generate filename with today's date
-  const today = new Date().toISOString().slice(0, 10);   // e.g. 2025-01-15
-  XLSX.writeFile(wb, `meat-distribution-${today}.xlsx`);
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, 'meat-distribution-' + today + '.xlsx');
 }
 
 // ── IMPORT FROM EXCEL (.xlsx) ─────────────────
-// Reads an uploaded .xlsx file and appends rows to the current list
 function importExcel(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-
   reader.onload = function (e) {
     try {
-      const data  = new Uint8Array(e.target.result);
-      const wb    = XLSX.read(data, { type: 'array' });
-
-      // Read the first sheet
-      const sheetName = wb.SheetNames[0];
-      const ws        = wb.Sheets[sheetName];
-
-      // Convert sheet to array of objects using first row as header
+      const data     = new Uint8Array(e.target.result);
+      const wb       = XLSX.read(data, { type: 'array' });
+      const ws       = wb.Sheets[wb.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-      if (jsonData.length === 0) {
-        alert('The Excel file appears to be empty.');
-        return;
-      }
+      if (jsonData.length === 0) { alert('The Excel file appears to be empty.'); return; }
 
-      let added = 0;
-      let skipped = 0;
-
+      let added = 0, skipped = 0;
       jsonData.forEach(function (rowObj) {
-        // Support both "Name" and "name" column headings (case-insensitive)
-        const nameRaw   = rowObj['Name']   || rowObj['name']   || rowObj['NAME']   || '';
+        const nameRaw   = rowObj['Name'] || rowObj['name'] || rowObj['NAME'] || '';
         const statusRaw = rowObj['Status'] || rowObj['status'] || rowObj['STATUS'] || 'NO';
-
-        const name   = String(nameRaw).trim();
-        const status = String(statusRaw).trim().toUpperCase() === 'YES' ? 'YES' : 'NO';
-
-        if (!name) { skipped++; return; }   // skip rows with no name
-
-        rows.push({ id: generateId(), name, status });
+        const name      = String(nameRaw).trim();
+        const status    = String(statusRaw).trim().toUpperCase() === 'YES' ? 'YES' : 'NO';
+        if (!name) { skipped++; return; }
+        rows.push({ id: generateId(), name: name, status: status, locked: true });
         added++;
       });
 
       saveToStorage();
       renderTable();
-
-      // Reset file input so the same file can be re-imported if needed
       event.target.value = '';
-
-      alert(`✅ Imported ${added} row(s) successfully.` + (skipped ? `\n⚠ ${skipped} row(s) skipped (empty name).` : ''));
-
+      alert('✅ Imported ' + added + ' row(s).' + (skipped ? '\n⚠ ' + skipped + ' skipped (empty name).' : ''));
     } catch (err) {
-      alert('❌ Could not read the file. Make sure it is a valid .xlsx file.\n\nError: ' + err.message);
+      alert('❌ Could not read the file.\n\nError: ' + err.message);
       event.target.value = '';
     }
   };
-
-  reader.readAsArrayBuffer(file);   // read file as binary
+  reader.readAsArrayBuffer(file);
 }
 
-
+// ── CLEAR ALL DATA ────────────────────────────
 function clearAll() {
   if (rows.length === 0) return;
   if (!confirm('Delete ALL records? This cannot be undone.')) return;
@@ -247,69 +214,75 @@ function clearAll() {
 }
 
 // ── RENDER TABLE ──────────────────────────────
-// Rebuilds the entire table from the `rows` array
 function renderTable() {
   const tbody      = document.getElementById('table-body');
   const emptyState = document.getElementById('empty-state');
 
-  // Clear existing rows
   tbody.innerHTML = '';
 
   if (rows.length === 0) {
-    // Show the "no records" message, hide table body
     document.getElementById('distribution-table').style.display = 'none';
     emptyState.classList.add('visible');
     updateStats();
     return;
   }
 
-  // Rows exist — show the table
   document.getElementById('distribution-table').style.display = 'table';
   emptyState.classList.remove('visible');
 
-  // Build each table row
   rows.forEach(function (row, index) {
     const isYes = row.status === 'YES';
+    const tr    = document.createElement('tr');
 
-    const tr = document.createElement('tr');
-
-    // ── Serial number cell
+    // Serial number
     const tdSerial = document.createElement('td');
-    tdSerial.className = 'cell-serial';
-    tdSerial.textContent = index + 1;   // 1-based serial number
+    tdSerial.className   = 'cell-serial';
+    tdSerial.textContent = index + 1;
 
-    // ── Name cell
+    // Name
     const tdName = document.createElement('td');
-    tdName.className = 'cell-name';
+    tdName.className   = 'cell-name';
     tdName.textContent = row.name;
 
-    // ── Status cell (toggle button)
+    // Status cell:
+    // • locked: false → clickable button (first-time set)
+    // • locked: true  → plain badge (use Edit to change)
     const tdStatus = document.createElement('td');
-    const btnStatus = document.createElement('button');
-    btnStatus.className = 'btn-status ' + (isYes ? 'yes' : 'no');
-    btnStatus.textContent = isYes ? '✓ YES' : '✗ NO';
-    btnStatus.title = isYes ? 'Click to mark Unpaid' : 'Click to mark Paid';
-    btnStatus.onclick = function () { toggleStatus(row.id); };
-    tdStatus.appendChild(btnStatus);
 
-    // ── Actions cell (Edit + Delete buttons)
+    if (!row.locked) {
+      // Unlocked: show as a clickable toggle button
+      const btn = document.createElement('button');
+      btn.className   = 'btn-status ' + (isYes ? 'yes' : 'no');
+      btn.textContent = isYes ? '✓ YES' : '✗ NO';
+      btn.title       = 'Click to confirm status (one-time)';
+      btn.onclick     = function () { firstTimeToggle(row.id); };
+      tdStatus.appendChild(btn);
+    } else {
+      // Locked: show as non-clickable badge
+      const badge = document.createElement('span');
+      badge.className   = 'status-badge ' + (isYes ? 'yes' : 'no');
+      badge.textContent = isYes ? '✓ YES' : '✗ NO';
+      badge.title       = 'Use Edit button to change';
+      tdStatus.appendChild(badge);
+    }
+
+    // Actions
     const tdActions = document.createElement('td');
     tdActions.className = 'cell-actions';
 
     const btnEdit = document.createElement('button');
-    btnEdit.className = 'btn-edit';
+    btnEdit.className   = 'btn-edit';
     btnEdit.textContent = '✏ Edit';
-    btnEdit.onclick = function () { openEdit(row.id); };
+    btnEdit.onclick     = function () { openEdit(row.id); };
 
     const btnDelete = document.createElement('button');
-    btnDelete.className = 'btn-delete';
+    btnDelete.className   = 'btn-delete';
     btnDelete.textContent = '✕ Del';
-    btnDelete.onclick = function () { deleteRow(row.id); };
+    btnDelete.onclick     = function () { deleteRow(row.id); };
 
     tdActions.appendChild(btnEdit);
     tdActions.appendChild(btnDelete);
 
-    // Append all cells to the row
     tr.appendChild(tdSerial);
     tr.appendChild(tdName);
     tr.appendChild(tdStatus);
@@ -323,7 +296,7 @@ function renderTable() {
 
 // ── UPDATE STATS BADGES ───────────────────────
 function updateStats() {
-  const total   = rows.length;
+  const total    = rows.length;
   const yesCount = rows.filter(r => r.status === 'YES').length;
   const noCount  = total - yesCount;
 
